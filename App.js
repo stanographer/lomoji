@@ -39,7 +39,7 @@ export default class App extends React.Component {
 			originalText: '',
 			translatedText: [],
 			history: [],
-			langList: []
+			langList: {}
 		}
 	}
 
@@ -73,23 +73,22 @@ export default class App extends React.Component {
 			'Rubik-Regular': require('./assets/fonts/Rubik-Regular.ttf'),
 			'Rubik-Medium': require('./assets/fonts/Rubik-Medium.ttf')
 		});
-		this.setState({
-			langList: languages.data.languages
+		await axios
+				.get(`https://translation.googleapis.com/language/translate/v2/languages?key=${config.apiKey}&target=en`)
+				.then((result) => {
+					
+					this.setState({
+						langList: result.data.languages
+					});
+					console.log(this.langList);
+				})
+				.catch((err) => {
+					this.setState({
+						langList: languages.data.languages
+					});
+					alert(`Unable to retrieve list of languages from Google Translate.\nLocal list used instead.\n\n${err}`);
 		});
-		// await axios
-		// 		.get(`https://translation.googleapis.com/language/translate/v2/languages?key=${config.apiKey}&target=en`)
-		// 		.then((result) => {
-		// 			console.log(result.data);
-		// 			this.setState({
-		// 				langList: result.data.languages
-		// 			});
-		// 		})
-		// 		.catch((err) => {
-		// 			this.setState({
-		// 				langList: languages.data.languages
-		// 			});
-		// 			alert(`Unable to retrieve list of languages from Google Translate.\nLocal list used instead.\n\n${err}`);
-		// });
+
 		this.setState({assetsLoaded: true});
 	}
 	render() {
