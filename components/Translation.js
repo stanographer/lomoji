@@ -1,97 +1,44 @@
 import React from 'react';
-import { Font } from 'expo';
-import {
-	KeyboardAvoidingView,
-	StyleSheet,
-	View
-} from 'react-native';
 import {
 	Body,
-	Button,
+	Card,
+	CardItem,
 	Container,
-	Content,
-	Header,
-	Icon,
-	Left,
-	Right,
-	Spinner,
-	Text,
-	Title
-
+	Text
 } from 'native-base';
 import {
-	Col,
-	Row,
-	Grid
-} from 'react-native-easy-grid';
-import InputBox from './components/InputBox';
+	Translate,
+	PowerTranslator,
+	ProviderTypes,
+	TranslatorConfiguration,
+	TranslatorFactory
+} from 'react-native-power-translator';
+import config from '../assets/config.json';
 
-export default class App extends React.Component {
-	state = {
-		fontLoaded: false,
-	};
-	async componentDidMount() {
-		await Font.loadAsync({
-			'Rubik-Regular': require('./assets/fonts/Rubik-Regular.ttf'),
-		});
-		this.setState({fontLoaded: true});
+class Translation extends React.Component {
+	constructor(props) {
+		super(props);
 	}
+
 	render() {
-		if (this.state.fontLoaded) {
+		if (this.props.to.length > 0 && this.props.from.length > 0 && this.props.originalText.length > 0) {
+			TranslatorConfiguration.setConfig(ProviderTypes.Google, config.apiKey, this.props.to, this.props.from);
 			return (
-				<Container style={styles.container}>
-					<Header transparent style={styles.header}>
-						<Left>
-							<Button transparent>
-								<Icon name='more' style={styles.headerButton} />
-							</Button>
-						</Left>
+				<Card>
+					<CardItem header>
+						<Text>{this.props.to}</Text>
+					</CardItem>
+					<CardItem>
 						<Body>
-							<Title style={styles.headerText}>LOMOJI</Title>
+							<PowerTranslator text={this.props.originalText} />
 						</Body>
-						<Right />
-					</Header>
-					<Content padder>
-						<KeyboardAvoidingView behavior='padding'>
-							<InputBox style={styles} />
-						</KeyboardAvoidingView>
-					</Content>
-				</Container>
+					</CardItem>
+				</Card>
+
 			);
 		}
-	return (<Spinner />);
+		return <Text>Nothing to translate!</Text>
 	}
 }
 
-const styles = StyleSheet.create({
-	bodyText: {
-		color: '#4f4f4f',
-		fontFamily: 'Rubik-Regular'
-	},
-	buttonText: {
-		fontFamily: 'Rubik-Regular',
-		fontSize: 30,
-		letterSpacing: 5
-	},
-	container: {
-		flex: 1,
-		backgroundColor: '#fff'
-	},
-	header: {
-		backgroundColor: '#8894C9'
-	},
-	headerButton: {
-		color: '#fff'
-	},
-	headerText: {
-		fontFamily: 'Rubik-Regular',
-		fontSize: 20,
-		color: '#fff',
-		letterSpacing: 5
-	},
-	textArea: {
-		color: '#4f4f4f',
-		fontFamily: 'Rubik-Regular',
-		fontSize: 30
-	}
-});
+export default Translation;

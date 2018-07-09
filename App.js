@@ -6,6 +6,7 @@ import {
 	View
 } from 'react-native';
 import {
+	AsyncStorage,
 	Body,
 	Button,
 	Container,
@@ -24,11 +25,46 @@ import {
 } from 'native-base';
 import Input from './components/Input';
 import SetLangs from './components/SetLangs';
+import axios from 'axios';
+import languages from './assets/languages.json';
+import config from './assets/config.json';
 
 export default class App extends React.Component {
-	state = {
-		fontLoaded: false,
-	};
+	constructor() {
+		super();
+		this.state = {
+			assetsLoaded: false,
+			fromLang: [],
+			toLang: [],
+			originalText: '',
+			translatedText: [],
+			history: [],
+			langList: {}
+		}
+	}
+
+	handleToLang = (toLang) => {
+		this.setState({
+			toLang
+		});
+	}
+
+	handleFromLang = (fromLang) => {
+		this.setState({
+			fromLang
+		});
+	}
+
+	handleNewInput = (originalText) => {
+		this.setState({
+			originalText
+		});
+	}
+
+	handleTranslate = (translatedText) => {
+		this.setState({translatedText: [...this.state.translatedText, translatedText]});
+	}
+
 	async componentDidMount() {
 		await Font.loadAsync({
 			'Ionicons': require('@expo/vector-icons/fonts/Ionicons.ttf'),
@@ -37,10 +73,24 @@ export default class App extends React.Component {
 			'Rubik-Regular': require('./assets/fonts/Rubik-Regular.ttf'),
 			'Rubik-Medium': require('./assets/fonts/Rubik-Medium.ttf')
 		});
-		this.setState({fontLoaded: true});
+		await axios
+				.get(`https://translation.googleapis.com/language/translate/v2/languages?key=${config.apiKey}&target=en`)
+				.then((result) => {
+					console.log(result.data);
+					this.setState({
+						langList: result.data.languages
+					});
+				})
+				.catch((err) => {
+					this.setState({
+						langList: languages.data.languages
+					});
+					alert(`Unable to retrieve list of languages from Google Translate.\nLocal list used instead.\n\n${err}`);
+		});
+		this.setState({assetsLoaded: true});
 	}
 	render() {
-		if (this.state.fontLoaded) {
+		if (this.state.assetsLoaded) {
 			return (
 				<Container style={styles.container}>
 					<Header transparent hasTabs style={styles.header}>
@@ -63,7 +113,11 @@ export default class App extends React.Component {
 						}>
 							<Content padder>
 								<KeyboardAvoidingView behavior='padding'>
-									<Input style={styles} />
+									<Input
+										style={styles}
+										updateNewInput={this.handleNewInput}
+										updateTranslate={this.handleTranslate}
+										state={this.state} />
 								</KeyboardAvoidingView>
 							</Content>
 						</Tab>
@@ -75,9 +129,18 @@ export default class App extends React.Component {
 								</Text>
 							</TabHeading>
 						}>
-							<SetLangs style={styles} />
+							<SetLangs
+								style={styles}
+								langList={this.state.langList}
+								updateFromLang={this.handleFromLang.bind(this)}
+								updateToLang={this.handleToLang.bind(this)}
+								state={this.state} />
 						</Tab>
-				</Tabs>
+					</Tabs>
+					<Text>{this.state.fromLang}</Text>
+							<Text>{this.state.toLang}</Text>
+							<Text>{this.state.originalText}</Text>
+							<Text>{this.state.translatedText}</Text>
 				</Container>
 			);
 		}
