@@ -18,15 +18,18 @@ class Input extends React.Component {
 	render() {
 		return (
 			<View>
-				<Textarea
-					rowSpan={5}
-					style={this.props.style.textArea}
-					placeholder='Text to translate...'
-					onChangeText={this.props.updateNewInput}
-					value={this.props.state.originalText} />
-				<Button type='submit' block large success onPress={this.props.updateTranslate}>
-					<Icon name='swap' />
-				</Button>
+				<Form onSubmit={this.props.updateTranslate}>
+					<Textarea
+						rowSpan={5}
+						style={this.props.style.textArea}
+						placeholder='Text to translate...'
+						onChangeText={this.props.updateNewInput}
+						ref="textBox"
+						value={this.props.state.originalText} />
+					<Button type='submit' block large success>
+						<Icon name='swap' />
+					</Button>
+				</Form>
 				{
 					this.props.state.toLang.map(lang => {
 						return <Translation

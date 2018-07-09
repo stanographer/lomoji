@@ -34,7 +34,7 @@ class Input extends React.Component {
 			{  
 			  name: "Languages",
 			  id: 0,
-			  children: this.props.langList
+			  children: this.props.state.langList
 			}
 		  ];
 
@@ -131,8 +131,8 @@ class Input extends React.Component {
 							onSelectedItemsChange={this.props.updateToLang}
 							selectedItems={this.props.state.toLang}
 						/>
-					{/* <Text>{this.state.originalLang}</Text> */}
-					<Text>{this.state.selectedLangs}</Text>
+					<Text>{this.props.state.fromLang}</Text>
+					<Text>{this.props.state.toLang}</Text>
 				</Content>
 			</Container>
 		);
