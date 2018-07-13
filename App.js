@@ -1,12 +1,12 @@
-import React from 'react';
+// React and Expo
+import React, { Component } from 'react';
 import { Font } from 'expo';
 import {
+	AsyncStorage,
 	KeyboardAvoidingView,
-	StyleSheet,
-	View
+	StyleSheet
 } from 'react-native';
 import {
-	AsyncStorage,
 	Body,
 	Button,
 	Container,
@@ -21,25 +21,32 @@ import {
 	TabHeading,
 	Text,
 	Title
-
 } from 'native-base';
+
+// Required modules
+import axios from 'axios';
+import DropdownAlert from 'react-native-dropdownalert';
+
+// Components
 import Input from './components/Input';
 import SetLangs from './components/SetLangs';
-import axios from 'axios';
+
+// Settings
 import languages from './assets/languages.json';
 import config from './assets/config.json';
 
-export default class App extends React.Component {
+export default class App extends Component {
 	constructor() {
 		super();
 		this.state = {
+			showToast: false,
 			assetsLoaded: false,
 			fromLang: [],
 			toLang: [],
 			originalText: '',
-			translatedText: [],
+			submittedText: '',
 			history: [],
-			langList: {}
+			langList: []
 		}
 	}
 
@@ -56,13 +63,76 @@ export default class App extends React.Component {
 	}
 
 	handleNewInput = (originalText) => {
+		if (this.submittedText && this.submittedText.length < 1) {
+			this.setState({submittedText: this.originalText});
+		}
 		this.setState({
 			originalText
 		});
 	}
 
-	handleTranslate = (translatedText) => {
-		this.setState({translatedText: [...this.state.translatedText, translatedText]});
+	handleTranslate = (event) => {
+		event.preventDefault();
+
+		// Alerts the user that at least one language needs to be selected.
+		if (this.state.toLang && this.state.toLang.length < 1) {
+			this.onAlert('warn', 'No Target Languages', 'Please select target languages in Options before attempting to translate.');
+		}
+
+		// Only add translation to history if it doesn't exist in history.
+		if (this.state.history.indexOf(this.state.submittedText) < 1) {
+			this.setState({history: [...this.state.history, this.state.submittedText]});
+		}
+		
+		// Update the typed-in text to be what's translated.
+		this.setState({
+			submittedText: this.state.originalText
+		});
+	}
+
+	// Gets the state of the last session.
+	getState = async() => {
+		try {
+			const savedState = await AsyncStorage.getItem('@Lomoji:state') || null;
+			if (savedState) {
+				this.setState({
+					savedState
+				});
+			}
+			this.onAlert('warn', 'No Saved State', 'There is no saved state');
+		} catch (error) {
+			console.log('there was an error');
+		}
+	}
+
+	// Saves the state of the current session.
+	saveState = async() => {
+		try {
+			await AsyncStorage.setItem('@Lomoji:state', JSON.stringify(this.state));
+		} catch (error) {
+			alert('there was an error in saving!');
+		}
+	}
+
+	// Dropdown alerts
+
+	onAlert = (type, heading, message) => {
+		switch (type) {
+			case 'error':
+				this.dropdown.alertWithType('error', heading, message);
+				break;
+			case 'warn':
+				this.dropdown.alertWithType('warn', heading, message);
+				break;
+			case 'success':
+				this.dropdown.alertWithType('success', heading, message);
+				break;
+			case 'info':
+				this.dropdown.alertWithType('info', heading, message);
+				break;
+			default:
+				this.dropdown.alertWithType('dismiss', heading, message);
+		}
 	}
 
 	async componentDidMount() {
@@ -74,20 +144,22 @@ export default class App extends React.Component {
 			'Rubik-Medium': require('./assets/fonts/Rubik-Medium.ttf')
 		});
 		await axios
+				// Get most recent list of langs from Google.
 				.get(`https://translation.googleapis.com/language/translate/v2/languages?key=${config.apiKey}&target=en`)
+				// If that was successful, set our internal state.
 				.then((result) => {
-					
 					this.setState({
-						langList: result.data.languages
+						langList: result.data.data.languages
 					});
-					console.log(this.langList);
 				})
+				// If that fails, use default built-in list of languages.
 				.catch((err) => {
 					this.setState({
 						langList: languages.data.languages
 					});
 					alert(`Unable to retrieve list of languages from Google Translate.\nLocal list used instead.\n\n${err}`);
 		});
+		await this.getState();
 
 		this.setState({assetsLoaded: true});
 	}
@@ -117,8 +189,8 @@ export default class App extends React.Component {
 								<KeyboardAvoidingView behavior='padding'>
 									<Input
 										style={styles}
-										updateNewInput={this.handleNewInput}
-										updateTranslate={this.handleTranslate}
+										handleNewInput={this.handleNewInput}
+										handleTranslate={this.handleTranslate}
 										state={this.state} />
 								</KeyboardAvoidingView>
 							</Content>
@@ -138,10 +210,26 @@ export default class App extends React.Component {
 								state={this.state} />
 						</Tab>
 					</Tabs>
-					<Text>{this.state.fromLang}</Text>
-							<Text>{this.state.toLang}</Text>
-							<Text>{this.state.originalText}</Text>
-							<Text>{this.state.translatedText}</Text>
+					<DropdownAlert 
+						ref={ref => this.dropdown = ref}
+						containerStyle={{
+							padding: 40,
+							flexDirection: 'row'
+						}}
+						titleStyle={{
+							fontFamily: 'Rubik-Medium',
+							fontSize: 21,
+							textAlign: 'left',
+							fontWeight: 'bold',
+							color: 'white'
+						}}
+						messageStyle={{
+							fontFamily: 'Rubik-Regular',
+							fontSize: 17,
+							textAlign: 'left',
+							fontWeight: 'bold',
+							color: 'white'
+						}} />
 				</Container>
 			);
 		}
@@ -165,6 +253,16 @@ const styles = StyleSheet.create({
 		fontFamily: 'Rubik-Regular',
 		fontSize: 30,
 		letterSpacing: 5
+	},
+	cardHeader: {
+		fontFamily: 'Rubik-Medium',
+		fontSize: 29,
+		color: '#4f4f4f'
+	},
+	cardText: {
+		fontFamily: 'Rubik-Regular',
+		fontSize: 20,
+		color: '#4f4f4f'
 	},
 	container: {
 		flex: 1,

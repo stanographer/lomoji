@@ -21,23 +21,28 @@ class Translation extends React.Component {
 	}
 
 	render() {
-		if (this.props.to.length > 0 && this.props.from.length > 0 && this.props.originalText.length > 0) {
-			TranslatorConfiguration.setConfig(ProviderTypes.Google, config.apiKey, this.props.to, this.props.from);
+		if (this.props.to.length > 0 && this.props.submittedText.length > 0) {
+			TranslatorConfiguration.setConfig(ProviderTypes.Google, config.apiKey, this.props.to, null);
 			return (
 				<Card>
 					<CardItem header>
-						<Text>{this.props.to}</Text>
+						<Text style={this.props.style.cardHeader}>{this.props.languageName}</Text>
 					</CardItem>
 					<CardItem>
 						<Body>
-							<PowerTranslator text={this.props.originalText} />
+							<PowerTranslator
+								text={this.props.submittedText}
+								style={{
+									fontFamily: 'Rubik-Regular',
+									fontSize: 22,
+									color: '#4f4f4f'
+								}} />
 						</Body>
 					</CardItem>
 				</Card>
-
 			);
 		}
-		return <Text>Nothing to translate!</Text>
+		return <Text>Press the translate button!</Text>;
 	}
 }
 
